@@ -8,6 +8,8 @@ scroll position and pointer movement. Logic is layered MVC; rendering stays in C
 
 > No build step. No dependencies. No framework. Serve the folder and it runs.
 
+**Live:** https://odd-world-nine.vercel.app
+
 ---
 
 ## Table of Contents
@@ -363,8 +365,24 @@ deployed site.
 
 ## Deployment
 
-The site is fully static, so any static host works — GitHub Pages, Netlify, Vercel, Cloudflare
-Pages, or plain object storage.
+The site is fully static, so any static host works — GitHub Pages, Netlify, Cloudflare Pages, or
+plain object storage.
+
+### Live
+
+Deployed to Vercel and verified in headless Chrome against production:
+
+**https://odd-world-nine.vercel.app**
+
+The project is linked to `main` on GitHub, so **every push to `main` deploys automatically** —
+there is no manual deploy step.
+
+| | |
+|---|---|
+| Project | `odd-world` |
+| Framework preset | None (static) |
+| Build command | None |
+| Output | Repository root, as-is |
 
 ### GitHub Pages
 
