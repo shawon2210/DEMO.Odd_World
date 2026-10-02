@@ -21,6 +21,11 @@ import {
 } from '../config.js';
 import { clamp, segmentInOut, smoothstep } from '../utils/math.js';
 
+/** Half the background stack's width, as a fraction of the viewport (106vw / 2). */
+const BACK_STACK_SPAN_HALF = 0.53;
+/** Where the background stack's own left edge sits on screen (100vw - 3vw). */
+const STACK_WORLD_ORIGIN = 0.5;
+
 export const computeTimeline = (model) => {
   const scroll = model.scrollSmooth;
 
@@ -48,11 +53,20 @@ export const computeTimeline = (model) => {
 
   // The sights rail is counter-scaled against the background stack, so its
   // offset has to be solved in unscaled parent coordinates.
-  const { innerHeight } = model.viewport;
+  const { innerWidth, innerHeight } = model.viewport;
+  const cardWidth = model.cardWidth;
   const sightsScreenTop =
     Math.min(SIGHTS_TOP_MAX, Math.max(SIGHTS_TOP_MIN, innerHeight * SIGHTS_TOP_VIEWPORT_RATIO)) -
     SIGHTS_TOP_OFFSET;
   const sightsParentTop = innerHeight - (innerHeight - sightsScreenTop) / backScale;
+
+  // Horizontally the rail maps 1:1 onto the viewport, but the background stack
+  // is BACK_STACK_SPAN vw wide and scaled about its centre, which leaves the
+  // rail's local origin displaced by (SPAN/2 * backScale - worldOrigin) of the
+  // viewport width. Adding that displacement back is what centres the active
+  // card instead of parking it off-screen.
+  const sightsCenterOffset =
+    (innerWidth - cardWidth) / 2 + (BACK_STACK_SPAN_HALF * backScale - STACK_WORLD_ORIGIN) * innerWidth;
 
   return {
     // Pointer
@@ -120,6 +134,7 @@ export const computeTimeline = (model) => {
     sightsVisible: sightsEnter > 0.01,
     sightsEnterX: (1 - sightsEnter) * 420,
     sightsScale: 1 / backScale,
+    sightsCenter: sightsCenterOffset,
     sightsTop: sightsParentTop,
     sightsScreenTop,
   };

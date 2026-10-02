@@ -21,6 +21,7 @@ import {
   setScrollDistance,
   setScrollTarget,
   setSightCount,
+  setCardWidth,
   setViewport,
   step,
 } from '../model/state.js';
@@ -44,6 +45,7 @@ export const createController = ({ model, view }) => {
   /** Refresh viewport and scroll-extent values used by the timeline. */
   const measure = () => {
     setViewport(model, window.innerWidth, window.innerHeight);
+  setCardWidth(model, view.getCardWidth());
     setScrollDistance(model, els.section ? els.section.offsetHeight - window.innerHeight : 0);
   };
 
@@ -157,6 +159,7 @@ export const createController = ({ model, view }) => {
     window.addEventListener('resize', () => {
       measure();
       view.measureSlider();
+      setCardWidth(model, view.getCardWidth());
       paintSlider();
       requestFrame();
     });
@@ -191,6 +194,7 @@ export const createController = ({ model, view }) => {
     centerSlider(model);
 
     view.measureSlider();
+    setCardWidth(model, view.getCardWidth());
     view.onCardActivate(selectCard);
     paintSlider();
 

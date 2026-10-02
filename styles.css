@@ -31,6 +31,7 @@
   --sights-opacity: 0; --sights-controls-opacity: 0; --sights-y: 0px;
   --sights-enter-x: 420vw; --sights-visibility: hidden;
   --sights-shift: 0px; --sights-scale: 1;
+  --sights-center: 0px;
   --sights-top: clamp(112px, 19vh, 220px);
   --sights-screen-top: clamp(112px, 19vh, 220px);
   --ink: #111411; --paper: #fdf1e1; --shadow: rgba(0, 0, 0, 0.32);
@@ -263,7 +264,7 @@ picture {
   display: flex;
   gap: clamp(16px, 1.15vw, 24px);
   align-items: stretch;
-  transform: translate3d(calc(var(--sights-shift) - 18vw), 0, 0);
+transform: translate3d(calc(var(--sights-shift) + var(--sights-center)), 0, 0);
   transition: transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
@@ -671,7 +672,7 @@ picture {
   .facts { gap: 18px; margin-top: 34px; }
   .facts dt { font-size: 2.5rem; }
   .sights-slider { padding: 0; }
-  .sights-track { gap: 12px; transform: translate3d(calc(var(--sights-shift) - 18vw), 0, 0); }
+  .sights-track { gap: 12px; transform: translate3d(calc(var(--sights-shift) + var(--sights-center)), 0, 0); }
   .sight-card { flex-basis: min(82vw, 330px); height: 220px; padding: 24px; border-radius: 24px; }
   .sights-controls { top: calc(var(--sights-screen-top) + 236px); }
   .sight-card h3 { max-width: 78%; }

@@ -124,6 +124,7 @@ export const createView = () => {
     setVar('--sights-enter-x', vw(frame.sightsEnterX));
     setVar('--sights-scale', num(frame.sightsScale));
     setVar('--sights-top', px(frame.sightsTop));
+    setVar('--sights-center', px(frame.sightsCenter));
     setVar('--sights-screen-top', px(frame.sightsScreenTop));
     setVar('--sights-visibility', frame.sightsVisible ? 'visible' : 'hidden');
 
@@ -166,6 +167,9 @@ export const createView = () => {
     cardWidth = cards[0].offsetWidth;
     gap = parseFloat(getComputedStyle(els.track).columnGap || '0');
   };
+
+  /** Card width for the model to solve the centring offset against. */
+  const getCardWidth = () => cardWidth;
 
   /**
    * Position the track so `activeSight` is the centred card.
@@ -235,6 +239,7 @@ export const createView = () => {
     render,
     buildSlider,
     measureSlider,
+    getCardWidth,
     renderSlider,
     focusActiveCard,
     setSliderJumping,

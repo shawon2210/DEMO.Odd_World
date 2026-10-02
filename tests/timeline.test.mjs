@@ -20,6 +20,10 @@ import { SEGMENTS, RAMPS, PROGRESS_SPAN } from '../js/config.js';
 const golden = JSON.parse(readFileSync(new URL('./golden/timeline.json', import.meta.url), 'utf8'));
 const VIEWPORT = golden.viewport;
 
+// Card width is measured from the DOM at runtime; the fixture supplies the
+// width used at the snapshot viewport so the centring offset stays finite.
+const CARD_WIDTH = 360;
+
 const frameAt = (scroll, overrides = {}) =>
   computeTimeline({
     scrollSmooth: scroll,
@@ -27,6 +31,7 @@ const frameAt = (scroll, overrides = {}) =>
     mouseY: 0,
     reducedMotion: false,
     viewport: VIEWPORT,
+    cardWidth: CARD_WIDTH,
     ...overrides,
   });
 
@@ -159,11 +164,11 @@ test('pointer input drives parallax with layer-specific multipliers', () => {
 test('sights geometry is derived from viewport height', () => {
   const short = computeTimeline({
     scrollSmooth: 3700, mouseX: 0, mouseY: 0, reducedMotion: false,
-    viewport: { innerWidth: 1440, innerHeight: 600 },
+    viewport: { innerWidth: 1440, innerHeight: 600 }, cardWidth: CARD_WIDTH,
   });
   const tall = computeTimeline({
     scrollSmooth: 3700, mouseX: 0, mouseY: 0, reducedMotion: false,
-    viewport: { innerWidth: 1440, innerHeight: 1200 },
+    viewport: { innerWidth: 1440, innerHeight: 1200 }, cardWidth: CARD_WIDTH,
   });
   assert.notEqual(short.sightsTop, tall.sightsTop, 'rail offset must track viewport height');
   assert.ok(tall.sightsTop > short.sightsTop, 'taller viewports push the rail down');

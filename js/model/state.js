@@ -24,6 +24,8 @@ export const createModel = () => ({
   /** Injected geometry, refreshed by the Controller on resize. */
   scrollDistance: 0,
   viewport: { innerWidth: 0, innerHeight: 0 },
+  /** Width of one carousel card, measured from the DOM. */
+  cardWidth: 0,
 
   /** True when the user prefers reduced motion; disables easing and parallax. */
   reducedMotion: false,
@@ -82,6 +84,11 @@ export const setScrollTarget = (model, distance) => {
 /** Record a viewport rect in pixels. */
 export const setViewport = (model, innerWidth, innerHeight) => {
   model.viewport = { innerWidth, innerHeight };
+};
+
+/** Record the measured width of one carousel card. */
+export const setCardWidth = (model, width) => {
+  model.cardWidth = width;
 };
 
 /** Set the maximum scrollable distance for the current layout. */
