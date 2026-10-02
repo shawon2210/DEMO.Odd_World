@@ -14,7 +14,6 @@
  */
 
 import { createModel } from './model/state.js';
-import { computeTimeline } from './model/timeline.js';
 import { createView } from './view/view.js';
 import { createController } from './controller/controller.js';
 
@@ -31,5 +30,3 @@ if (document.readyState === 'loading') {
 } else {
   boot();
 }
-
-export { model, view, controller, computeTimeline };
