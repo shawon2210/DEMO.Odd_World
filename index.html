@@ -32,13 +32,15 @@
               <span aria-hidden="true">⌄</span>
             </button>
           </header>
+          <h1 class="hero-title">MOSTAR</h1>
           <div class="back-stack">
             <picture>
               <source type="image/avif" srcset="assets/images/back-four-1024.avif 1024w, assets/images/back-four-1920.avif 1920w, assets/images/back-four-2560.avif 2560w" sizes="119vw" />
               <img class="scene-img back-img back-four" src="assets/images/back-four-1024.webp" srcset="assets/images/back-four-1024.webp 1024w, assets/images/back-four-1920.webp 1920w, assets/images/back-four-2560.webp 2560w" sizes="119vw" width="1024" height="576" alt="" decoding="async" />
             </picture>
-            <section class="sights-slider" aria-label="Mostar sights slider">
-              <div class="sights-track">
+            <section class="sights-slider" role="group" aria-roledescription="carousel" aria-label="Mostar sights" id="sights">
+              <h2 class="visually-hidden">Sights in Mostar</h2>
+              <div class="sights-track" id="sights-track">
                 <article class="sight-card" tabindex="0" role="button" aria-label="Open Stari Most card">
                   <span class="sight-kicker">Old Bridge</span>
                   <picture>
@@ -85,6 +87,7 @@
                   <p>A compact, moving stop for context on the city's recent history.</p>
                 </article>
               </div>
+              <p class="visually-hidden" aria-live="polite" data-carousel-status></p>
             </section>
             <picture>
               <source type="image/avif" srcset="assets/images/back-bazaar-1024.avif 1024w, assets/images/back-bazaar-1920.avif 1920w, assets/images/back-bazaar-2560.avif 2560w" sizes="119vw" />
@@ -92,10 +95,9 @@
             </picture>
           </div>
           <div class="sights-controls" aria-label="Slider controls">
-            <button class="sight-nav sight-prev" type="button" aria-label="Previous sight">←</button>
-            <button class="sight-nav sight-next" type="button" aria-label="Next sight">→</button>
+            <button class="sight-nav sight-prev" type="button" aria-label="Previous sight" aria-controls="sights-track">←</button>
+            <button class="sight-nav sight-next" type="button" aria-label="Next sight" aria-controls="sights-track">→</button>
           </div>
-          <h1 class="hero-title">MOSTAR</h1>
           <picture>
             <source type="image/avif" srcset="assets/images/split-left-1024.avif 1024w, assets/images/split-left-1920.avif 1920w, assets/images/split-left-2560.avif 2560w" sizes="min(118vw, 2240px)" />
             <img class="scene-img splitframe-img splitframe-left" src="assets/images/split-left-1024.webp" srcset="assets/images/split-left-1024.webp 1024w, assets/images/split-left-1920.webp 1920w, assets/images/split-left-2560.webp 2560w" sizes="min(118vw, 2240px)" width="1024" height="576" alt="" decoding="async" />

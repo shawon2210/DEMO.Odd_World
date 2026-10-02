@@ -104,6 +104,36 @@ export const createController = ({ model, view }) => {
     paintSlider();
   };
 
+  /**
+   * Arrow-key control for the carousel.
+   *
+   * The View uses a roving tabindex, so only the active card is focusable. That
+   * makes keyboard operation a single tab stop with arrow keys, instead of one
+   * tab stop per card across three cloned sets.
+   */
+  const onSliderKeydown = (event) => {
+    const moves = {
+      ArrowRight: 1,
+      ArrowDown: 1,
+      ArrowLeft: -1,
+      ArrowUp: -1,
+    };
+
+    if (event.key in moves) {
+      event.preventDefault();
+      nudgeSlider(moves[event.key]);
+      view.focusActiveCard();
+      return;
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const last = model.sightCount * 2 - 1;
+      jumpSliderTo(event.key === 'Home' ? model.sightCount : last);
+      view.focusActiveCard();
+    }
+  };
+
   /** Scroll to a named section, falling back to default anchor behaviour. */
   const scrollToHash = (hash) => {
     if (!(hash in NAV_OFFSETS)) return;
@@ -134,7 +164,10 @@ export const createController = ({ model, view }) => {
     if (els.prevBtn) els.prevBtn.addEventListener('click', () => nudgeSlider(-1));
     if (els.nextBtn) els.nextBtn.addEventListener('click', () => nudgeSlider(1));
 
-    if (els.track) els.track.addEventListener('transitionend', normalizeSlider);
+    if (els.track) {
+      els.track.addEventListener('transitionend', normalizeSlider);
+      els.track.addEventListener('keydown', onSliderKeydown);
+    }
 
     document.querySelectorAll(HEADER_LINK_SELECTOR).forEach((link) => {
       link.addEventListener('click', (event) => {

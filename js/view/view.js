@@ -19,6 +19,7 @@ const SELECTORS = {
   prevBtn: '.sight-prev',
   nextBtn: '.sight-next',
   card: '.sight-card',
+  status: '[data-carousel-status]',
 };
 
 export const createView = () => {
@@ -30,12 +31,17 @@ export const createView = () => {
     controls: doc.querySelector(SELECTORS.controls),
     prevBtn: doc.querySelector(SELECTORS.prevBtn),
     nextBtn: doc.querySelector(SELECTORS.nextBtn),
+    status: doc.querySelector(SELECTORS.status),
   };
 
   /** All carousel cards across every cloned set. */
   let cards = [];
   let cardWidth = 0;
   let gap = 0;
+  /** Cards per set, used to phrase the live-region announcement. */
+  let setSize = 0;
+  /** Last index announced, so repeated renders stay quiet. */
+  let lastAnnounced = -1;
 
   const setVar = (name, value) => els.root.style.setProperty(name, value);
   const num = (value) => value.toFixed(4);
@@ -137,8 +143,8 @@ export const createView = () => {
     if (!els.track) return 0;
 
     const originals = Array.from(els.track.querySelectorAll(SELECTORS.card));
-    const setSize = originals.length;
     const source = [...originals];
+    setSize = originals.length;
 
     els.track.replaceChildren();
 
@@ -161,14 +167,48 @@ export const createView = () => {
     gap = parseFloat(getComputedStyle(els.track).columnGap || '0');
   };
 
-  /** Position the track so `activeSight` is the centred card. */
+  /**
+   * Position the track so `activeSight` is the centred card.
+   *
+   * Uses a roving tabindex: only the active card is reachable by keyboard, and
+   * the other two sets are hidden from assistive tech. Without this the 15
+   * clones become 15 tab stops and every sight is announced three times.
+   */
   const renderSlider = (activeSight) => {
     if (!cards.length) return;
 
     setVar('--sights-shift', `${-(cardWidth + gap) * activeSight}px`);
+
     cards.forEach((card) => {
-      card.classList.toggle('is-active', Number(card.dataset.sightIndex) === activeSight);
+      const index = Number(card.dataset.sightIndex);
+      const isActive = index === activeSight;
+      card.classList.toggle('is-active', isActive);
+      card.tabIndex = isActive ? 0 : -1;
+      card.setAttribute('aria-hidden', isActive ? 'false' : 'true');
     });
+
+    announce(activeSight);
+  };
+
+  /** Describe the current slide in the live region, but only when it changes. */
+  const announce = (activeSight) => {
+    if (!els.status || activeSight === lastAnnounced) return;
+    lastAnnounced = activeSight;
+
+    const card = cards.find((c) => Number(c.dataset.sightIndex) === activeSight);
+    const name = card?.querySelector('h3')?.textContent.trim();
+    if (!name || !setSize) return;
+
+    const position = ((activeSight % setSize) + setSize) % setSize;
+    els.status.textContent = `${name}, ${position + 1} of ${setSize}`;
+  };
+
+  /** Move keyboard focus to the active card without scrolling the page. */
+  const focusActiveCard = () => {
+    const active = cards.find((card) => card.classList.contains('is-active'));
+    if (active && typeof active.focus === 'function') {
+      active.focus({ preventScroll: true });
+    }
   };
 
   /** Suppress the track transition for one frame pair, for invisible wrap jumps. */
@@ -196,6 +236,7 @@ export const createView = () => {
     buildSlider,
     measureSlider,
     renderSlider,
+    focusActiveCard,
     setSliderJumping,
     onCardActivate,
   };
