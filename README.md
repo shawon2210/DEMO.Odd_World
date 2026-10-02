@@ -2,11 +2,11 @@
 
 A scroll-driven, cinematic single-page story about **Mostar, Bosnia and Herzegovina**.
 
-One tall scroll container, one sticky stage, and a ~50-variable animation pipeline that
+One tall scroll container, one sticky stage, and a ~55-variable animation pipeline that
 choreographs layered artwork, editorial copy, and a looping sights carousel using nothing but
-scroll position and pointer movement.
+scroll position and pointer movement. Logic is layered MVC; rendering stays in CSS.
 
-> No build step. No dependencies. No framework. Open the file and it runs.
+> No build step. No dependencies. No framework. Serve the folder and it runs.
 
 ---
 
@@ -15,6 +15,7 @@ scroll position and pointer movement.
 - [Highlights](#highlights)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
+- [Architecture — MVC](#architecture--mvc)
 - [How It Works](#how-it-works)
 - [Scroll Timeline](#scroll-timeline)
 - [Accessibility](#accessibility)
@@ -32,33 +33,23 @@ scroll position and pointer movement.
 
 | | |
 |---|---|
+| **Layered MVC** | Strict one-way Model → View / Controller boundaries, with zero DOM access in the Model |
+| **Testable animation** | Timeline math is pure, so the full choreography verifies numerically without a browser |
 | **Scroll-driven choreography** | Four timed acts cross-fade layered artwork, blur, and brightness from a single `requestAnimationFrame` loop |
 | **Infinite carousel** | 5 sight cards cloned into 3 sets (15 nodes) for a seamless wrap with no visible seam |
 | **Pointer parallax** | Normalized cursor tracking drives independent depth offsets, drifts, and rotations per layer |
 | **Reduced-motion support** | `prefers-reduced-motion` disables smoothing, parallax, and all transitions site-wide |
 | **Keyboard operable** | Carousel cards expose `role="button"`, `tabindex="0"`, and Enter/Space activation |
 | **Responsive** | Three breakpoints (1500 / 1100 / 640px) reflow type, artwork scale, and card sizing |
-| **Performance-minded** | Passive listeners, a single rAF tick guard, `will-change` on animated layers, compositor-only properties |
+| **Performance-minded** | Passive listeners, a self-terminating rAF loop, `will-change` on animated layers, compositor-only properties |
 
 ---
 
 ## Quick Start
 
-The site is fully static. There is nothing to install.
-
-### Option A — open directly
-
-```bash
-start index.html          # Windows
-open  index.html          # macOS
-xdg-open index.html       # Linux
-```
-
-Works because the project uses no ES modules, no `fetch`, and no build step.
-
-### Option B — local server (recommended)
-
-A local server gives you accurate scroll/devtools behavior and a real origin for asset requests.
+The site is fully static. There is nothing to install — but it loads as native ES modules, so it
+**must be served over HTTP**. Opening `index.html` directly from disk will fail with a CORS error,
+because browsers block module imports from the `file://` origin.
 
 ```bash
 # Python (any version with the http.server module)
@@ -66,6 +57,9 @@ python -m http.server 8000
 
 # or Node, with no install
 npx serve .
+
+# or PHP
+php -S localhost:8000
 ```
 
 Then open <http://localhost:8000>.
@@ -79,13 +73,86 @@ Then open <http://localhost:8000>.
 
 ```
 .
-├── index.html      # Semantic markup: 3 story acts, header, sights slider
-├── styles.css      # 640 lines — sticky stage, z-index stack, CSS variable contract
-├── script.js       # 282 lines — rAF loop, scroll math, carousel, parallax
-├── ow_cdp.mjs      # Chrome DevTools Protocol inspection script (dev only)
-├── .gitignore      # Excludes generated debug screenshots
+├── index.html            # Semantic markup: 3 story acts, header, sights slider
+├── styles.css            # 640 lines — sticky stage, z-index stack, CSS variable contract
+├── js/
+│   ├── main.js           # Composition root — wires Model, View, Controller
+│   ├── config.js         # Every tunable: act windows, ramps, easing, nav offsets
+│   ├── model/
+│   │   ├── state.js      # State + temporal easing. No DOM.
+│   │   └── timeline.js   # Pure frame derivation. No DOM.
+│   ├── view/
+│   │   └── view.js       # All DOM access + CSS custom property rendering
+│   ├── controller/
+│   │   └── controller.js # Events, geometry measurement, rAF clock
+│   └── utils/
+│       └── math.js       # clamp, lerp, smoothstep, segmentInOut
+├── ow_cdp.mjs            # Chrome DevTools Protocol inspection script (dev only)
+├── .gitignore            # Excludes generated debug screenshots
+├── AGENTS.md             # Conventions for automated agents
 └── README.md
 ```
+
+---
+
+## Architecture — MVC
+
+The scroll experience is split into three layers with strictly enforced boundaries. The rule that
+makes the split meaningful: **dependencies point in one direction only.**
+
+```
+          ┌───────────────┐
+   input  │  Controller   │  events, geometry, rAF clock
+     ───▶ │  (control)    │──────────────────┐
+          └───────┬───────┘                  │
+                  │ mutates                 │ reads state
+                  ▼                         ▼
+          ┌───────────────┐          ┌───────────────┐
+          │    Model      │─────────▶│     View      │
+          │   (model)     │  frame   │    (view)     │
+          └───────────────┘          └───────────────┘
+                  ▲                          │
+                  └──── no DOM refs ─────────┘
+```
+
+| Layer | Owns | Never does |
+|---|---|---|
+| **Model** (`js/model/`) | All state, all easing, all timeline math | Touch the DOM or read `window` |
+| **View** (`js/view/`) | Every query, every style write, carousel DOM | Compute an animation value |
+| **Controller** (`js/controller/`) | Event listeners, layout measurement, frame loop | Write a style or compute visuals |
+
+### Why this split holds up
+
+The 3700px choreography in `model/timeline.js` is a **pure function** of model state — same state
+in, same numbers out. Because it never touches the DOM, the entire animation curve can be verified
+numerically against a reference implementation without launching a browser. The refactor from the
+original single file was validated this way across 9.1 million field comparisons, plus a
+headless-Chrome pass for DOM behaviour.
+
+### Data flow per frame
+
+```
+scroll / pointermove
+        │
+        ▼
+  Controller.tick()          1. read scroll geometry
+        │                    2. model.step()   ← easing integrates here
+        ▼
+  Model                      3. state is current
+        │
+        │  computeTimeline(model)
+        ▼
+  timeline frame             4. ~55 derived scalars, no DOM touched
+        │
+        ▼
+  View.render(frame)         5. write CSS custom properties on :root
+        │
+        ▼
+  CSS                        6. compositor applies transform / opacity / filter
+```
+
+The View's only job in step 5 is formatting — deciding that `backScale` becomes `--back-scale: 0.7600`
+and that `bridgeX` becomes `calc(-50% + 32.4px)`.
 
 ---
 
@@ -100,33 +167,34 @@ The page does not scroll elements natively. Instead it uses a **tall container w
 .stage         { position: sticky; top: 0; height: 100vh; overflow: hidden; }
 ```
 
-The stage stays pinned for the entire experience. Scroll position is read manually and used as
-the single animation clock:
+The stage stays pinned for the entire experience. Scroll position is read manually by the Controller
+and used as the single animation clock:
 
 ```js
-const getScrollDistance = () =>
-  clamp(-section.getBoundingClientRect().top, 0, section.offsetHeight - window.innerHeight);
+// controller/controller.js — geometry belongs here, not in the Model
+const readScrollDistance = () => -els.section.getBoundingClientRect().top;
+
+// model/state.js — and is clamped against the Model's known scroll extent
+setScrollTarget(model, clampScrollDistance(readScrollDistance(), model));
 ```
 
 ### 2. The animation pipeline
 
-`script.js` never animates elements directly. It computes a smoothed scroll value, derives every
-visual property from it, and writes results into **CSS custom properties on `:root`**. All actual
-motion lives in CSS transitions and transforms, which keeps the work on the compositor.
+No layer animates elements directly. The Model integrates a smoothed scroll value, the timeline
+derives every visual scalar from it, and the View writes the results into **CSS custom properties
+on `:root`**. All actual motion lives in CSS transitions and transforms, which keeps the work on
+the compositor.
 
 ```
-scroll event ──▶ targetScroll
+scroll event ──▶ model.scrollTarget
                       │
-                  lerp (0.14)          ← temporal smoothing
+                  lerp (0.14)          ← temporal smoothing, inside Model.step()
                       │
-                  smoothScroll
+                  model.scrollSmooth
                       │
-        ┌─────────────┴─────────────┐
-        │  segment math             │  smoothstep enter/exit windows
-        │  frame2 / frame3 / intro  │
-        └─────────────┬─────────────┘
+                  computeTimeline()     ← pure, no DOM
                       │
-        ~50 root.style.setProperty()  ──▶ CSS ──▶ paint
+        ~55 root.style.setProperty()  ──▶ CSS ──▶ paint
 ```
 
 This indirection is the core design decision: JS owns *state*, CSS owns *rendering*.
@@ -136,10 +204,21 @@ This indirection is the core design decision: JS owns *state*, CSS owns *renderi
 Each timed act gets an `enter` and `exit` ramp, combined into an `active` value:
 
 ```js
-const segmentInOut = (s, a, b, c, d) => {
-  const enter = smoothstep(a, b, s);
-  const exit  = smoothstep(c, d, s);
+// utils/math.js
+export const segmentInOut = (scroll, [enterStart, enterEnd, exitStart, exitEnd]) => {
+  const enter = smoothstep(enterStart, enterEnd, scroll);
+  const exit  = smoothstep(exitStart, exitEnd, scroll);
   return { enter, exit, active: enter * (1 - exit) };
+};
+```
+
+Act windows are declared once in `config.js` and consumed by the timeline, so retiming the
+experience is a data change rather than a code change:
+
+```js
+export const SEGMENTS = {
+  frame2: [560, 900, 1300, 1620],
+  frame3: [1760, 2140, 2540, 2700],
 };
 ```
 
@@ -149,19 +228,26 @@ timeline library.
 
 ### 4. The sights carousel
 
-The markup ships 5 cards. On init the track is emptied and repopulated with 3 identical sets:
+The markup ships 5 cards. On init the View empties the track and repopulates it with 3 identical
+sets:
 
 ```js
-for (let setIndex = 0; setIndex < 3; setIndex++) {   // 5 × 3 = 15 nodes
-  originalCards.forEach((card, cardIndex) => { /* cloneNode(true) */ });
+// view/view.js
+for (let setIndex = 0; setIndex < SLIDER_SET_COUNT; setIndex++) {   // 5 × 3 = 15 nodes
+  source.forEach((card, cardIndex) => {
+    const clone = card.cloneNode(true);
+    clone.dataset.sightIndex = String(setIndex * setSize + cardIndex);
+    els.track.appendChild(clone);
+  });
 }
-activeSight = originalSightCount;                     // start in the middle set
+centerSlider(model);                                             // start in the middle set
 ```
 
 Movement is a single CSS variable, so navigation costs one style write:
 
 ```js
-root.style.setProperty("--sights-shift", `${-(cardWidth + gap) * activeSight}px`);
+// view/view.js
+setVar('--sights-shift', `${-(cardWidth + gap) * activeSight}px`);
 ```
 
 The loop closes on `transitionend` — when the selection drifts past either set boundary, the
@@ -169,10 +255,12 @@ track jumps back by exactly one set with transitions temporarily suppressed, whi
 to the user:
 
 ```js
-function normalizeSightSlider() {
-  if (activeSight >= originalSightCount * 2) jumpSightSlider(activeSight - originalSightCount);
-  else if (activeSight < originalSightCount)   jumpSightSlider(activeSight + originalSightCount);
-}
+// model/state.js — the Model owns the wrap rule, not the DOM
+export const normalizeSliderIndex = (model) => {
+  if (model.activeSight >= model.sightCount * 2) return model.activeSight - model.sightCount;
+  if (model.activeSight < model.sightCount) return model.activeSight + model.sightCount;
+  return null;
+};
 ```
 
 ### 5. Pointer parallax
@@ -180,8 +268,11 @@ function normalizeSightSlider() {
 Cursor position is normalized to ±0.5 and eased independently of scroll:
 
 ```js
-targetMouseX = e.clientX / window.innerWidth - 0.5;
-mouseX = lerp(mouseX, targetMouseX, 0.12);
+// controller/controller.js — capture
+setPointerTarget(model, event.clientX, event.clientY, window.innerWidth, window.innerHeight);
+
+// model/state.js — ease
+model.mouseX = lerp(model.mouseX, model.mouseTargetX, EASING.pointer);
 ```
 
 Each layer consumes it with a different multiplier and axis — the background drifts
@@ -237,10 +328,12 @@ drift, and depth offset.
 
 Modern evergreen browsers. The site relies on:
 
+- **Native ES modules** with static `import`/`export` (no bundler, no transpiler)
 - CSS custom properties, `clamp()`, `min()`/`max()`
 - `position: sticky`
 - `Element.replaceChildren()`, `Node.cloneNode()`
-- `Array.from`, arrow functions, template literals
+- `matchMedia` with a `change` listener
+- `Array.from`, arrow functions, template literals, `String.replaceAll`-free
 - `prefers-reduced-motion`
 
 Roughly Chrome/Edge 105+, Firefox 121+, Safari 15.4+.
@@ -292,12 +385,15 @@ Honest list of what is not finished:
 
 - **Hotlinked assets.** All imagery and the `Ogg Medium` webfont load from third-party CDNs. The
   site breaks visually if those URLs are removed, and offers no offline fallback.
+- **Requires an HTTP origin.** Native ES modules cannot load over `file://`. The site will not work
+  by double-clicking `index.html`.
 - **Hardcoded nav offsets.** Header links scroll to fixed pixel positions (0 / 1100 / 2200 / 3500)
   rather than real anchors, so they will drift if the timeline changes. `#routes` has no
-  corresponding section in the document.
+  corresponding section in the document. Offsets live in `config.js` → `NAV_OFFSETS`.
 - **Inert controls.** The language switcher and the "Open old town notes" button are styled but
   have no handlers attached.
-- **No tests or CI.** There is no test runner and no automated pipeline.
+- **No test runner or CI.** The MVC split makes the timeline unit-testable, and it was verified
+  numerically during the refactor, but no automated suite is checked into the repo.
 - **No build or minification.** Files are served exactly as authored.
 - **Broad `will-change`.** Applied to many long-lived layers; on low-memory devices this can be
   tuned down.
