@@ -67,6 +67,132 @@ button {
   min-height: 100vh;
 }
 
+/*
+ * Progressive enhancement.
+ *
+ * Without JS the scroll rig cannot run, so every act that depends on it would
+ * stay at its pre-animation state: panels and imagery at opacity 0, the sights
+ * rail hidden. That left a visitor with scripting disabled looking at an almost
+ * empty page — only 627 characters of text.
+ *
+ * So the scroll rig is opt-in. `.no-js` is the authored default and lays the acts
+ * out as a normal readable document; `.js` (set by an inline script in <head>)
+ * re-enables the rig. The inline script must stay inline and blocking, before
+ * first paint, or the enhanced layout would flash.
+ */
+.no-js .cinema-scroll {
+  height: auto;
+}
+
+.no-js .stage {
+  position: static;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  background: #7fb4d4;
+}
+
+.no-js .world {
+  position: static;
+  overflow: visible;
+}
+
+.no-js .site-header {
+  position: static;
+  padding: 20px clamp(18px, 4vw, 46px);
+}
+
+/* Lay the scenes out in reading order rather than absolutely positioned. */
+.no-js .back-stack,
+.no-js .sights-slider,
+.no-js .sights-controls,
+.no-js .hero-title,
+.no-js .intro-copy,
+.no-js .story-panel {
+  position: static;
+  /* The rig offsets these with left/top/translate; drop all of it. */
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.no-js .scene-img,
+.no-js .sky-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: none;
+}
+
+.no-js .back-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The hero title is 14rem and positioned at left:50% under the rig. */
+.no-js .hero-title {
+  width: min(94vw, 1780px);
+  margin: 0 auto;
+  padding: 72px 0 24px;
+  font-size: clamp(4.5rem, 14vw, 12rem);
+  transform: none;
+}
+
+/* Acts start visible; the rig fades them in when it takes over. */
+.no-js .frame-two-img,
+.no-js .story-panel,
+.no-js .sights-slider,
+.no-js .sights-controls {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.no-js .intro-copy {
+  width: min(560px, calc(100vw - 40px));
+  margin: 0 auto;
+  padding: 40px 0;
+  transform: none;
+}
+
+.no-js .story-panel {
+  width: min(760px, calc(100vw - 42px));
+  margin: 0 auto;
+  padding: 64px 0;
+  text-align: center;
+}
+
+.no-js .sights-slider {
+  visibility: visible;
+  padding: 40px 0;
+}
+
+.no-js .sights-track {
+  flex-wrap: wrap;
+  justify-content: center;
+  transform: none;
+}
+
+.no-js .sight-card {
+  flex: 0 0 min(360px, 82vw);
+  opacity: 1;
+}
+
+.no-js .sights-controls {
+  display: none;
+}
+
+/* The scene images are decorative backdrop; cap them so the fallback reads. */
+.no-js .back-img,
+.no-js .splitframe-img {
+  max-height: 46vh;
+  object-fit: cover;
+}
+
 /* Scroll rig */
 .cinema-scroll {
   position: relative;
