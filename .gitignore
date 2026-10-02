@@ -1,0 +1,7 @@
+# Generated debug screenshots (regenerate with: node ow_cdp.mjs)
+ow_cdp_shot.png
+ow_shot.png
+
+# OS cruft
+.DS_Store
+Thumbs.db
