@@ -38,11 +38,31 @@ Confirm with `git status -sb` that the branch is tracking `origin/main` and the 
 ### What this project is
 
 A dependency-free static site: `index.html`, `styles.css`, `script.js`. There is **no**
-`package.json`, no build step, and no test runner. Do not introduce one without being asked.
+`package.json`, no build step, and no install step. Do not introduce one without being asked.
 
 Scroll-driven animation works by reading scroll position in a `requestAnimationFrame` loop and
-writing ~50 CSS custom properties onto `:root`. CSS owns rendering; JS owns state. Respect that
+writing ~55 CSS custom properties onto `:root`. CSS owns rendering; JS owns state. Respect that
 separation when editing — do not move layout math into CSS or state into inline styles.
+
+### Tests
+
+```bash
+node --test
+```
+
+Node's built-in runner, no dependencies. Run it before pushing any change to `js/`. If you
+intentionally retime the scroll experience, `tests/regenerate-golden.mjs` updates the snapshot and
+the diff must be reviewed — every changed number is a visible change.
+
+### Assets
+
+`assets/` is generated output that is committed deliberately:
+
+- `assets/fonts/` — self-hosted so the font loads same-origin. Reintroducing a third-party
+  `@font-face` URL will silently fail in production, because `@font-face` fetches are always
+  CORS-mode.
+- `assets/images/` — AVIF with WebP fallback at three widths. Add new art at all three widths or
+  the `srcset` will serve a wrong-size image.
 
 ---
 

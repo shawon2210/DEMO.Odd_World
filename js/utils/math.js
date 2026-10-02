@@ -14,8 +14,12 @@ export const lerp = (a, b, t) => a + (b - a) * t;
 /**
  * Hermite ease with zero derivative at both ends.
  * Returns 0 below `edge0` and 1 above `edge1`.
+ *
+ * A zero-width window would divide by zero and return NaN, which would then
+ * poison every derived visual value, so it collapses to a hard step instead.
  */
 export const smoothstep = (edge0, edge1, value) => {
+  if (edge1 === edge0) return value < edge0 ? 0 : 1;
   const x = clamp((value - edge0) / (edge1 - edge0));
   return x * x * (3 - 2 * x);
 };

@@ -301,11 +301,54 @@ drift, and depth offset.
 
 ---
 
+## Testing
+
+The scroll choreography is a pure function, so it is verified without a browser. Uses Node's
+built-in test runner — **no dependencies, no `package.json`, no build step.**
+
+```bash
+node --test
+```
+
+```
+ℹ tests 38
+ℹ pass 38
+ℹ fail 0
+```
+
+| Suite | Covers |
+|---|---|
+| `tests/timeline.test.mjs` | Golden snapshot at 8 scroll positions, plus a full-range sweep asserting no `NaN`, bounded opacities, monotonic scale, and reduced-motion behaviour |
+| `tests/math.test.mjs` | `clamp`, `lerp`, `smoothstep`, `segmentInOut` |
+| `tests/state.test.mjs` | Easing integration, convergence, pointer normalisation, carousel wrap-around |
+| `tests/config.test.mjs` | Act windows are well formed, nav offsets are *derived* rather than restated, and the scroll distance is not duplicated into JS |
+
+### Changing the timeline
+
+`tests/golden/timeline.json` pins the current output. If you retime an act in `js/config.js`, the
+snapshot test **should** fail — that is the point. Then:
+
+```bash
+node tests/regenerate-golden.mjs   # accept the new behaviour
+node --test                        # confirm green
+```
+
+Review the diff before committing: every changed number is a visible change to the experience.
+
+---
+
 ## Accessibility
 
 - **Reduced motion** — `prefers-reduced-motion: reduce` snaps scroll to its target (no easing),
   zeroes parallax, and disables all transitions and smooth scrolling.
+- **Focus visible** — every interactive control keeps a visible focus ring. The carousel is a
+  single tab stop using a roving tabindex, operated with <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Home</kbd>
+  and <kbd>End</kbd>.
 - **Keyboard** — carousel cards are focusable and respond to <kbd>Enter</kbd> and <kbd>Space</kbd>.
+- **Heading order** — `h1` → `h2` → `h3`, with no skipped levels and a single `h1`.
+- **Carousel announcements** — a polite live region reports the current slide, e.g.
+  *"Stari Most, 1 of 5"*. The 10 cloned cards are `aria-hidden` so each sight is announced once.
+- **Target size** — all header controls meet the 44px minimum.
 - **Semantics** — `<main>`, `<header>`, `<nav>`, and `<section>` landmarks; every section and
   icon-only control carries an `aria-label`.
 - **Contrast** — cream text (`#fdf1e1`) on darkened artwork, with layered text shadows.
