@@ -1,6 +1,9 @@
+/* Self-hosted so the font loads same-origin. The previous third-party CDN
+   omitted Access-Control-Allow-Origin, and because @font-face fetches are
+   always CORS-mode this failed silently in production and fell back to serif. */
 @font-face {
   font-family: "Ogg Medium";
-  src: url("https://dcym8fthxf5uu.cloudfront.net/fonts/247a073c-29f5-4a89-aa3a-741020f346fc/OggText-Medium.woff2") format("woff2");
+  src: local("Ogg Medium"), url("assets/fonts/OggText-Medium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
