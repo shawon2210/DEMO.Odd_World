@@ -176,6 +176,12 @@ button {
   pointer-events: none;
 }
 
+/* Responsive image wrappers must not generate a box, otherwise the absolutely
+   positioned <img> would resolve against <picture> instead of .world. */
+picture {
+  display: contents;
+}
+
 /* Sky (z 0) */
 .sky-img {
   z-index: 0;
